@@ -18,10 +18,10 @@ const customerSchema = new mongoose.Schema({
   ...userSchema.obj,
   phone: { type: Number, required: true, unique: true },
   role: { type: String, enum: ["Customer"], default: "Customer" },
- // liveLocation: {
+  liveLocation: {
     latitude: { type: Number },
     longitude: { type: Number },
-  //},
+  },
   address: { type: String },
 });
 
@@ -32,10 +32,10 @@ const deliveryPartnerSchema = new mongoose.Schema({
   password: { type: String, required: true },
   phone: { type: Number, required: true },
   role: { type: String, enum: ["DeliveryPartner"], default: "DeliveryPartner" },
-  //liveLocation: {
+  liveLocation: {
     latitude: { type: Number },
     longitude: { type: Number },
- // },
+  },
   address: { type: String },
   branch: {
     type: mongoose.Schema.Types.ObjectId,

@@ -42,23 +42,12 @@ export const createOrder = async (req, reply) => {
 // Confirm the payment and create the actual order in the database
 export const confirmOrder = async (req, reply) => {
   try {
-    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
     const { userId } = req.user;
-    const { items, branch, totalPrice } = req.body; // These will come from the client after payment success
+    const { items, branch, totalPrice } = req.body;
 
-    // Verify the payment signature
-    const generatedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest('hex');
-
-    if (generatedSignature !== razorpay_signature) {
-      return reply.status(400).send({ message: "Invalid payment signature" });
-    }
-
-    // Payment is verified, now create the order in the database
     const customerData = await Customer.findById(userId);
-    const branchData = await Branch.findById(branch);
+    console.log(customerData, "check cusomer datat here");
+    const brachData = await Branch.findById(branch);
 
     if (!customerData) {
       return reply.status(404).send({ message: "Customer not found" });
@@ -73,29 +62,63 @@ export const confirmOrder = async (req, reply) => {
       })),
       branch,
       totalPrice,
-      razorpayOrderId: razorpay_order_id,
-      paymentId: razorpay_payment_id,
       deliveryLocation: {
-        latitude: customerData.latitude,
-        longitude: customerData.longitude,
-        address: customerData.address || "No address available",
+        latitude: customerData.liveLocation.latitude,
+        longitude: customerData.liveLocation.longitude,
+        address: "No address available",
       },
       pickupLocation: {
-        latitude: branchData.location.latitude,
-        longitude: branchData.location.longitude,
-        address: branchData.address || "No address available",
+        latitude: brachData.location.latitude,
+        longitude: brachData.location.longitude,
+        address: brachData.address || "No address available",
       },
-      status: "confirmed", // Order status confirmed after payment
     });
 
     const savedOrder = await newOrder.save();
-
     return reply.status(201).send(savedOrder);
-  } catch (error) {
-    console.error("Failed to confirm order", error);
-    return reply.status(500).send({ message: "Failed to confirm order" });
+  } catch (err) {
+    console.log(err);
+    return reply.status(500).send({ message: "Failed to create order", error });
   }
 };
+
+export const confirmingOrder = async (req, reply) => {
+  try {
+    const { orderId } = req.params;
+    const { userId } = req.user;
+    const { deliveryPersonLocation } = req.body;
+
+    const deliveryPerson = await DeliveryPartner.findById(userId);
+    if (!deliveryPerson) {
+      return reply.status(404).send({ message: "Delivery Person not found" });
+    }
+    const order = await Order.findById(orderId);
+    if (!order) return reply.status(404).send({ message: "Order not found" });
+
+    if (order.status !== "available") {
+      return reply.status(400).send({ message: "Order is not available" });
+    }
+    order.status = "confirmed";
+
+    order.deliveryPartner = userId;
+    order.deliveryPersonLocation = {
+      latitude: deliveryPersonLocation?.latitude,
+      longitude: deliveryPersonLocation?.longitude,
+      address: deliveryPersonLocation.address || "",
+    };
+
+    req.server.io.to(orderId).emit("orderConfirmed", order);
+
+    await order.save();
+
+    return reply.send(order);
+  } catch (error) {
+    return reply
+      .status(500)
+      .send({ message: "Failed to confirm order", error });
+  }
+};
+
 
 // Update the order status (e.g., for delivery updates)
 export const updateOrderStatus = async (req, reply) => {

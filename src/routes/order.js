@@ -1,4 +1,5 @@
 import {
+  confirmingOrder,
   confirmOrder,
   createOrder,
   getOrderById,
@@ -20,8 +21,8 @@ export const orderRoutes = async (fastify, options) => {
   fastify.post("/order", createOrder);
   fastify.get("/order", getOrders);
   fastify.patch("/order/:orderId/status", updateOrderStatus);
-  fastify.post("/order/:orderId/confirm", confirmOrder);
+  fastify.post("/order/confirm", confirmOrder);
+  fastify.post("/order/:orderId/confirm", confirmingOrder);
   fastify.get('/order/:orderId', getOrderById); 
-  /////
   fastify.put("/order/update", updateOrderFields);
 };
