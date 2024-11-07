@@ -14,28 +14,28 @@ sessionStore.on("error", (error) => {
   console.log("Session store error", error);
 });
 
-export const authenticate = async (email, password) => {
-    if (email == "aditya.14mittal@gmail.com" && password == "1234") {
-        return Promise.resolve({ email: email, password: password });
-      } else {
-        return null;
-      }
-}
-
 // export const authenticate = async (email, password) => {
-//   if (email && password) {
-//     const user = await Admin.findOne({ email });
-//     if (!user) {
-//       return null;
-//     }
-//     if (user.password === password) {
-//       return Promise.resolve({ email: email, password: password });
-//     } else {
-//       return null;
-//     }
-//   }
-//   return null;
-// };
+//     if (email == "aditya.14mittal@gmail.com" && password == "1234") {
+//         return Promise.resolve({ email: email, password: password });
+//       } else {
+//         return null;
+//       }
+// }
+
+export const authenticate = async (email, password) => {
+  if (email && password) {
+    const user = await Admin.findOne({ email });
+    if (!user) {
+      return null;
+    }
+    if (user.password === password) {
+      return Promise.resolve({ email: email, password: password });
+    } else {
+      return null;
+    }
+  }
+  return null;
+};
 
 
 export const PORT = process.env.PORT || 3000;
